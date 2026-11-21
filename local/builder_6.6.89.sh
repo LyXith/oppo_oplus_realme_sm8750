@@ -400,7 +400,13 @@ sed -i 's/check_defconfig//' ./common/build.config.gki
 # ===== 编译内核 =====
 echo ">>> 开始编译内核..."
 cd common
-make -j$(nproc --all) LLVM=-18 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnuabeihf- CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error gki_defconfig all
+make -j$(nproc --all) LLVM=-18 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnuabeihf- CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error gki_defconfig
+if [[ "$KSU_BRANCH" == [yY] ]]; then
+  # SukiSU Nova的preinit模块依赖 out/usr/include (UAPI头)，缺失会导致susfs补丁引用的preinit符号链接失败
+  make -j$(nproc --all) LLVM=-18 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnuabeihf- CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error headers_install INSTALL_HDR_PATH="$(pwd)/out/usr"
+  test -f ./out/usr/include/linux/unistd.h
+fi
+make -j$(nproc --all) LLVM=-18 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_ARM32=arm-linux-gnuabeihf- CC=clang LD=ld.lld HOSTCC=clang HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error all
 echo ">>> 内核编译成功！"
 
 # ===== 选择使用 patch_linux (KPM补丁)=====

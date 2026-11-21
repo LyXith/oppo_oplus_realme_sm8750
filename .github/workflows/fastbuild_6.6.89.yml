@@ -656,6 +656,12 @@ jobs:
           sudo rm -rf /opt/ghc &
           sudo rm -rf /opt/hostedtoolcache/CodeQL &
           make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="ccache clang" LD="ld.lld" HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error gki_defconfig &&
+          if [[ "${{ github.event.inputs.ksu_type }}" == "sukisu_nova" ]]; then
+            # SukiSU Nova的preinit模块依赖 out/usr/include (UAPI头)，缺失时会被禁用并导致susfs补丁引用的
+            # ksu_setup_preinit_file / ksu_preinit_handle_post_execveat 链接失败，需先导出头文件
+            make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- HOSTLD=ld.lld O=out headers_install INSTALL_HDR_PATH="$(pwd)/out/usr" &&
+            test -f ./out/usr/include/linux/unistd.h
+          fi &&
           make -j$(nproc --all) LLVM=1 ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- CC="$(pwd)/cc-wrapper" LD="$(pwd)/ld-wrapper" HOSTLD=ld.lld O=out KCFLAGS+=-O2 KCFLAGS+=-Wno-error Image
           
           # 编译后时间劫持二次校验
